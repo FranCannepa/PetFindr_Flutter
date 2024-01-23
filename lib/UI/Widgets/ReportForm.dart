@@ -9,7 +9,7 @@ import 'package:petfindr/UI/Widgets/CustomSubmitButton.dart';
 final _formKey = GlobalKey<FormState>();
 
 class ReportForm extends StatefulWidget {
-  const ReportForm({Key? key}) : super(key: key);
+  const ReportForm(Position? currentPosition, {Key? key}) : super(key: key);
   @override
   _ReportFormState createState() => _ReportFormState();
 }
@@ -17,11 +17,12 @@ class ReportForm extends StatefulWidget {
 class _ReportFormState extends State<ReportForm> {
   XFile? selectedPhoto;
   String? selectedType;
-  String? selectedCategory;
-  String? selectedBreed;
   XFile? _imageFile = null;
   Position? _currentPosition;
   LatLng? selectedLocation;
+  String? selectedCategory;
+  String? selectedBreed;
+  String? selectedSize;
 
   late MapController mapController = MapController();
 
@@ -55,7 +56,6 @@ class _ReportFormState extends State<ReportForm> {
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
   }
 
   @override
@@ -130,7 +130,7 @@ class _ReportFormState extends State<ReportForm> {
                       initialCenter: _currentPosition != null
                           ? LatLng(_currentPosition!.latitude,
                               _currentPosition!.longitude)
-                          : LatLng(0, 0), /*  onTap: setMarker */
+                          : LatLng(0, 0),
                     ),
                     children: [
                       TileLayer(
@@ -149,8 +149,14 @@ class _ReportFormState extends State<ReportForm> {
             child: Align(
               widthFactor: 1.0,
               child: InkWell(
-                onTap: () {
-                  _onImageButtonPressed(ImageSource.gallery, context: context);
+                onTap: () async {
+                  final XFile? image = await ImagePicker()
+                      .pickImage(source: ImageSource.gallery);
+                  if (image != null) {
+                    setState(() {
+                      _imageFile = image;
+                    });
+                  }
                 },
                 child: Container(
                   height: 50,
@@ -220,29 +226,5 @@ class _ReportFormState extends State<ReportForm> {
         _pickImageError = e;
       });
     }
-  }
-
-  Future<void> _getCurrentLocation() async {
-    try {
-      Position position = await _determinePosition();
-      setState(() {
-        _currentPosition = position;
-        mapController.move(LatLng(position.latitude, position.longitude), 15);
-      });
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  Future<Position> _determinePosition() async {
-    LocationPermission permission;
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        return Future.error('Location permissions are denied');
-      }
-    }
-    return await Geolocator.getCurrentPosition();
   }
 }

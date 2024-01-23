@@ -1,15 +1,14 @@
 import "package:mongo_dart/mongo_dart.dart";
-import 'dart:convert';
 import "package:petfindr/Db/dbConstants.dart";
 
 class MongoDatabase {
-  static var db, userCollection;
+  static var db, userCollection, reportCollection;
   static connect() async {
     try {
       db = await Db.create(DB_URL);
       await db.open();
-      print(db.isConnected);
       userCollection = db.collection(USERS_COLLECTION);
+      reportCollection = db.collection(REPORTS_COLLECTION);
     } catch (e) {
       print(e.toString());
     }
@@ -26,6 +25,18 @@ class MongoDatabase {
       }
     } catch (e) {
       return {'code': 500, 'error': e.toString()};
+    }
+  }
+
+  static Future<List<dynamic>?> fetchReports() async {
+    try {
+      var reports = [];
+      await reportCollection.find().forEach((rep) {
+        reports.add(rep);
+      });
+      return reports;
+    } catch (e) {
+      return null;
     }
   }
 }

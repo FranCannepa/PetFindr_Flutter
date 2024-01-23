@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:petfindr/UI/Widgets/ReportForm.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -10,49 +11,50 @@ class NewReport extends StatefulWidget {
 }
 
 class _NewReportState extends State<NewReport> {
-  String? selectedType;
-  String? selectedCategory;
-  String? selectedBreed;
-  String? selectedSize;
-  XFile? selectedPhoto;
-
-  final List<String> types = ['Lost', 'Found'];
-  final List<String> categories = ['Dog', 'Cat'];
-  final Map<String, List<String>> breeds = {
-    'Dog': [
-      'Labrador',
-      'Golden Retriever',
-      'German Shepherd',
-      'Bulldog',
-      'Poodle',
-      'Beagle',
-      'Boxer',
-      'Dachshund',
-      'Siberian Husky',
-    ],
-    'Cat': [
-      'Siamese',
-      'Persian',
-      'Maine Coon',
-      'Ragdoll',
-      'British Shorthair',
-      'Sphynx',
-      'Bengal',
-      'Abyssinian',
-      'Scottish Fold',
-    ],
-  };
-
-  final List<String> sizes = ['Small', 'Medium', 'Big'];
-
+  Position? _currentPosition;
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(30.0),
-        child: ReportForm(),
-      ),
-      backgroundColor: Theme.of(context).colorScheme.primary,
-    );
+    return FutureBuilder<Position?>(
+        future: _getCurrentLocation(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            return Scaffold(
+              body: Padding(
+                padding: const EdgeInsets.all(30.0),
+                child: ReportForm(_currentPosition),
+              ),
+              backgroundColor: Theme.of(context).colorScheme.primary,
+            );
+            ;
+          } else if (snapshot.hasError) {
+            return Text('Error fetching location: ${snapshot.error}');
+          } else {
+            return Center(child: CircularProgressIndicator());
+          }
+        });
+  }
+
+  Future<Position?>? _getCurrentLocation() async {
+    try {
+      Position position = await _determinePosition();
+      setState(() {
+        _currentPosition = position;
+      });
+      return _currentPosition;
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Future<Position> _determinePosition() async {
+    LocationPermission permission;
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        return Future.error('Location permissions are denied');
+      }
+    }
+    return await Geolocator.getCurrentPosition();
   }
 }

@@ -69,8 +69,6 @@ class _LoginState extends State<Login> {
         ));
   }
 
-  //Methods
-
   Future<void> loginUser(String email, String pass) async {
     if (email.isEmpty || pass.isEmpty) {
       Utilities.showErrorMessage(context, "Campos Vacios");
@@ -78,7 +76,6 @@ class _LoginState extends State<Login> {
       try {
         Map<String, dynamic> result =
             await MongoDatabase.loginUser(email, pass);
-
         if (result["code"] == 200) {
           Map<String, dynamic> data = result["data"];
           final SharedPreferences prefs = await SharedPreferences.getInstance();
